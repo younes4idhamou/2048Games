@@ -24,18 +24,23 @@ KeyboardInputManager.prototype.listen = function () {
   var self = this;
 
   var map = {
-    38: 0, // Up
-    39: 1, // Right
-    40: 2, // Down
-    37: 3, // Left
-    75: 0, // vim keybindings
-    76: 1,
-    74: 2,
-    72: 3,
-    87: 0, // W
-    68: 1, // D
-    83: 2, // S
-    65: 3  // A
+    49: [0, 0],
+    50: [1, 0],
+    51: [2, 0],
+    52: [3, 0],
+    81: [0, 1],
+    87: [1, 1],
+    69: [2, 1],
+    82: [3, 1],
+    65: [0, 2],
+    83: [1, 2],
+    68: [2, 2],
+    70: [3, 2],
+    90: [0, 3],
+    88: [1, 3],
+    67: [2, 3],
+    86: [3, 3],
+    192: "random"
   };
 
   document.addEventListener("keydown", function (event) {
@@ -46,12 +51,34 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers) {
       if (mapped !== undefined) {
         event.preventDefault();
-        self.emit("move", mapped);
+        self.emit("drop", mapped);
       }
 
       if (event.which === 32) self.restart.bind(self)(event);
     }
   });
+
+  function agc(c, x, y) {
+    document.querySelector(c).addEventListener("click", function () {
+      self.emit("drop", [x, y]);
+    });
+  };
+  agc(".gc00", 0, 0);
+  agc(".gc10", 1, 0);
+  agc(".gc20", 2, 0);
+  agc(".gc30", 3, 0);
+  agc(".gc01", 0, 1);
+  agc(".gc11", 1, 1);
+  agc(".gc21", 2, 1);
+  agc(".gc31", 3, 1);
+  agc(".gc02", 0, 2);
+  agc(".gc12", 1, 2);
+  agc(".gc22", 2, 2);
+  agc(".gc32", 3, 2);
+  agc(".gc03", 0, 3);
+  agc(".gc13", 1, 3);
+  agc(".gc23", 2, 3);
+  agc(".gc33", 3, 3);
 
   var retry = document.querySelector(".retry-button");
   retry.addEventListener("click", this.restart.bind(this));
@@ -60,37 +87,6 @@ KeyboardInputManager.prototype.listen = function () {
   var keepPlaying = document.querySelector(".keep-playing-button");
   keepPlaying.addEventListener("click", this.keepPlaying.bind(this));
   keepPlaying.addEventListener("touchend", this.keepPlaying.bind(this));
-
-  // Listen to swipe events
-  var touchStartClientX, touchStartClientY;
-  var gameContainer = document.getElementsByClassName("game-container")[0];
-
-  gameContainer.addEventListener("touchstart", function (event) {
-    if (event.touches.length > 1) return;
-
-    touchStartClientX = event.touches[0].clientX;
-    touchStartClientY = event.touches[0].clientY;
-    event.preventDefault();
-  });
-
-  gameContainer.addEventListener("touchmove", function (event) {
-    event.preventDefault();
-  });
-
-  gameContainer.addEventListener("touchend", function (event) {
-    if (event.touches.length > 0) return;
-
-    var dx = event.changedTouches[0].clientX - touchStartClientX;
-    var absDx = Math.abs(dx);
-
-    var dy = event.changedTouches[0].clientY - touchStartClientY;
-    var absDy = Math.abs(dy);
-
-    if (Math.max(absDx, absDy) > 10) {
-      // (right : left) : (down : up)
-      self.emit("move", absDx > absDy ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
-    }
-  });
 };
 
 KeyboardInputManager.prototype.restart = function (event) {

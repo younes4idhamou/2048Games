@@ -6,7 +6,9 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
 
   this.startTiles   = 2;
 
-  this.inputManager.on("move", this.move.bind(this));
+  // this.inputManager.on("move", this.move.bind(this));
+  this.inputManager.on("drop", this.drop.bind(this));
+
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
 
@@ -43,7 +45,7 @@ GameManager.prototype.setup = function () {
   this.keepPlaying = false;
 
   // Add the initial tiles
-  this.addStartTiles();
+  // this.addStartTiles();
 
   // Update the actuator
   this.actuate();
@@ -68,7 +70,7 @@ GameManager.prototype.addRandomTile = function () {
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
-  if (this.scoreManager.get() < this.score) {
+  if (this.over && this.scoreManager.get() > this.score) {
     this.scoreManager.set(this.score);
   }
 
@@ -79,7 +81,6 @@ GameManager.prototype.actuate = function () {
     bestScore:  this.scoreManager.get(),
     terminated: this.isGameTerminated()
   });
-
 };
 
 // Save all tile positions and remove merger info
@@ -152,16 +153,52 @@ GameManager.prototype.move = function (direction) {
     });
   });
 
-  if (moved) {
-    this.addRandomTile();
-
+  //if (moved) {
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
     }
 
     this.actuate();
-  }
+  //}
+
+  return moved;
 };
+
+// Insert a new tile on
+GameManager.prototype.drop = function (pos) {
+  if (this.isGameTerminated()) return; // Don't do anything if the game's over
+
+  if (this.grid.cellsAvailable()) {
+    var value = Math.random() < 0.9 ? 16 : 32;
+    if (pos == "random") {
+      var cell = this.grid.randomAvailableCell();
+    } else {
+      var cell = {x: pos[0], y: pos[1]};
+    }
+
+    if (this.grid.cellAvailable(cell)) {
+      var tile = new Tile(cell, value);
+      this.grid.insertTile(tile);
+
+      this.actuate();
+      while (
+        this.movesAvailable()
+        &&
+        !this.move(Math.floor(Math.random() * 4))
+        &&
+        !this.isGameTerminated()
+      ) {};
+    }
+  }
+
+  while (
+    !this.grid.cellsAvailable()
+    &&
+    !this.isGameTerminated()
+    &&
+    this.move(Math.floor(Math.random() * 4))
+  ) {}
+}
 
 // Get the vector representing the chosen direction
 GameManager.prototype.getVector = function (direction) {
